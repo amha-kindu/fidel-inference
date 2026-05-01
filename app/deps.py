@@ -1,74 +1,32 @@
-import os
-import json
-import torch
+from __future__ import annotations
 
-import importlib
-from threading import Lock
-import sentencepiece as spm
+from functools import lru_cache
+from typing import Callable
 
-from .config import SETTINGS, DEVICE, AMP, ModelConfig, ModelWithLoRAConfig, DEFAULT_INFERENCE_CONFIG
-from .logging import LOGGER
-from .models.lora import LoRAdapter
-from .inference import InferenceEngine
-from .preprocessor import AmharicPreprocessor
+from fastapi import Request
+
+from .config import get_settings
+from .runtime import InferenceRuntime
+
+RuntimeProvider = Callable[[], InferenceRuntime]
 
 
-def get_model():
-    cwd = os.getcwd()
-    base_model_dir = os.path.join(cwd, "app", "models", SETTINGS.model_id, "checkpoint.pt")
-    base_metadata = os.path.join(cwd, "app", "models", SETTINGS.model_id, "metadata.json")
-    LOGGER.info(f"Loading checkpoint from {base_model_dir}...")
-    base_weights: dict = torch.load(base_model_dir, map_location=DEVICE, weights_only=False)
-    with open(base_metadata, 'r') as f:
-        base_metadata = json.load(f)
-        model_config = ModelConfig(**base_metadata)
-    
-    model_module = importlib.import_module(f'app.models.{SETTINGS.model_id}.model')
-    GPTmodel = getattr(model_module, 'GPTmodel')
-    
-    if SETTINGS.lora:
-        lora_model_dir = os.path.join(cwd, "app", "models", SETTINGS.model_id, "checkpoint-lora.pt")
-        lora_metadata_dir = os.path.join(cwd, "app", "models", SETTINGS.model_id, "metadata-lora.json")
-        LOGGER.info(f"Loading checkpoint from {lora_model_dir}...")
-        lora_weights: dict = torch.load(lora_model_dir, map_location=DEVICE, weights_only=False)
-        with open(lora_metadata_dir, 'r') as f:
-            lora_metadata = json.load(f)
-            model_config = ModelWithLoRAConfig(**lora_metadata)
-        base_weights.update(lora_weights)
-    else:
-        update_dir = os.path.join(cwd, "app", 'models', SETTINGS.model_id, "checkpoint-update.pt")
-        LOGGER.info(f"Loading update from {update_dir}...")
-        update_weights: dict = torch.load(update_dir, map_location=DEVICE, weights_only=False)
-        base_weights.update(update_weights)
+@lru_cache
+def create_runtime() -> InferenceRuntime:
+    return InferenceRuntime(get_settings())
 
-    model: torch.nn.Module = GPTmodel.build(
-        model_config,
-        weights=base_weights,
-    )
-    
-    if SETTINGS.lora:
-        merged = False
-        for module in model.modules():
-            if isinstance(module, LoRAdapter):
-                module.merge()
-                merged = True
-        if merged:
-            LOGGER.info(f"Merged LoRA adapters in model...")
 
-    total_params = sum(p.numel() for p in model.parameters())
-    LOGGER.info(f"Device: {DEVICE}")
-    LOGGER.info(f"Total Parameters: {total_params}")
-    LOGGER.info(f"Model Size(MB): {total_params * 4 / (1024 ** 2):.2f}MB")
-    LOGGER.info(f"Initiating inference with {'mixed-precision' if AMP else 'single-precision'}...")
-    
-    return model
+def get_runtime() -> InferenceRuntime:
+    return create_runtime()
 
-INFERENCE_LOCK = Lock()
 
-TOKENIZER = spm.SentencePieceProcessor()
-TOKENIZER.LoadFromFile(os.path.join(os.getcwd(), "app", SETTINGS.tokenizer_path))
-PREPROCESSOR = AmharicPreprocessor()
+def resolve_runtime(request: Request) -> InferenceRuntime:
+    provider: RuntimeProvider | None = getattr(request.app.state, "runtime_provider", None)
+    if provider is None:
+        return get_runtime()
+    return provider()
 
-model = get_model().to(DEVICE).eval()
-SYSTEM_PROMPT = os.environ.get("SYSTEM_PROMPT", "")
-INFERENCE_ENGINE = InferenceEngine(model, TOKENIZER, system_prompt=SYSTEM_PROMPT)
+
+def reset_runtime_state() -> None:
+    create_runtime.cache_clear()
+    get_settings.cache_clear()

@@ -1,28 +1,21 @@
-import torch
+from __future__ import annotations
+
+from typing import Sequence
 
 
-class Conversation:
-    def __init__(self, type: str, system_text=None) -> None:
-        self.type = type
-        self.exchanges = []
-        self.system_text = system_text
-    
-    def add_exchange(self, input_text: str, output_text: str):
-        self.exchanges.append({
-            "input": input_text,
-            "output": output_text
-        })
+def first_stop_index(text: str, stop_sequences: Sequence[str]) -> int | None:
+    positions = [text.find(stop) for stop in stop_sequences if stop and text.find(stop) >= 0]
+    if not positions:
+        return None
+    return min(positions)
 
 
-@torch.no_grad() 
-def get_casual_mask(size: int) -> torch.Tensor:
-    # Lower triangular matrix
-    # [[
-    #   [True, False, ... , False],
-    #   [True, True,  ... , False],
-    #   [True, True,  ... , False],
-    #   [True, True,  ... , True ]
-    # ]]
-    # 1 x size x size
-    idx = torch.arange(size, dtype=torch.int)
-    return (idx[None, :, None] >= idx[None, None, :]) # mask[i, j] = True if i ≥ j, else False.
+def safe_emittable_length(text: str, stop_sequences: Sequence[str]) -> int:
+    normalized = [stop for stop in stop_sequences if stop]
+    if not normalized:
+        return len(text)
+
+    longest = max(len(stop) for stop in normalized)
+    if longest <= 1:
+        return len(text)
+    return max(0, len(text) - longest + 1)

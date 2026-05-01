@@ -1,7 +1,8 @@
 import re
 from abc import ABC, abstractmethod
 
-class PreprocessingPipeline(ABC):   
+
+class PreprocessingPipeline(ABC):
     def __init__(self) -> None:
         super().__init__()
     
@@ -9,12 +10,14 @@ class PreprocessingPipeline(ABC):
     def execute(self, text: str) -> str:
         pass
 
-    
+
 class AmharicPreprocessor(PreprocessingPipeline):
     def __init__(self) -> None:
         super().__init__()
         # self.extra_whitespace = re.compile(r'\s{2,}')
-        # self.non_amharic_chars = re.compile(r'[^\u1200-\u137F0-9\s\'\"!@#$%*()_\-+=[\]{}|\\:;?./]')
+        # self.non_amharic_chars = re.compile(
+        #     r'[^\u1200-\u137F0-9\s\'\"!@#$%*()_\-+=[\]{}|\\:;?./]'
+        # )
         self.tab_placeholder = "→"
         self.newline_placeholder = "Г"
         self.normalization_patterns = [

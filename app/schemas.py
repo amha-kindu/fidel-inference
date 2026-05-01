@@ -1,10 +1,12 @@
-from pydantic import BaseModel, Field
-from typing import List, Optional, Literal
+from typing import List, Literal, Optional
+
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class Message(BaseModel):
     role: str
     content: str
+
 
 class ChatRequest(BaseModel):
     model: str
@@ -16,25 +18,19 @@ class ChatRequest(BaseModel):
     stream: Optional[bool] = False
     stop: Optional[List[str]] = None
 
-#
-# /v1/models
-#
 
 class ModelInfo(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
     id: str
     object: Literal["model"] = "model"
     owned_by: Optional[str] = None
-    # add fields if they already exist in app/models/list.json (e.g. "context_length")
 
 
 class ModelListResponse(BaseModel):
     object: Literal["list"] = "list"
     data: List[ModelInfo]
 
-
-#
-# /v1/chat/completions  (non-streaming)
-#
 
 class ChatMessage(BaseModel):
     role: Literal["system", "user", "assistant"]
@@ -54,19 +50,13 @@ class UsageInfo(BaseModel):
 
 
 class ChatCompletionResponse(BaseModel):
-    id: str = Field(..., example="chatcmpl-1234")
+    id: str = Field(..., examples=["chatcmpl-1234"])
     object: Literal["chat.completion"] = "chat.completion"
-    created: int = Field(..., example=1730025600)
-    model: str = Field(..., example="my-model-name")
+    created: int = Field(..., examples=[1730025600])
+    model: str = Field(..., examples=["my-model-name"])
     choices: List[ChatChoice]
     usage: UsageInfo
 
-
-#
-# /v1/chat/completions  (streaming chunks)
-#   We won't actually return these as pydantic in code,
-#   but we expose them to Swagger via responses / openapi_extra
-#
 
 class DeltaMessage(BaseModel):
     role: Optional[Literal["assistant"]] = None
@@ -80,8 +70,8 @@ class StreamChoice(BaseModel):
 
 
 class ChatCompletionChunk(BaseModel):
-    id: str = Field(..., example="chatcmpl-1234")
+    id: str = Field(..., examples=["chatcmpl-1234"])
     object: Literal["chat.completion.chunk"] = "chat.completion.chunk"
-    created: int = Field(..., example=1730025600)
-    model: str = Field(..., example="my-model-name")
+    created: int = Field(..., examples=[1730025600])
+    model: str = Field(..., examples=["my-model-name"])
     choices: List[StreamChoice]
