@@ -16,7 +16,6 @@ ENV/
 .pytest_cache/
 .ruff_cache/
 .mypy_cache/
-*.lock
 
 # Distribution / packaging
 dist/
