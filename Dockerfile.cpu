@@ -8,17 +8,15 @@ UVICORN_WORKERS=1
 
 # System deps
 RUN apt-get update && apt-get install -y --no-install-recommends \
-build-essential && rm -rf /var/lib/apt/lists/*
+build-essential curl && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /srv
-COPY pyproject.toml poetry.lock ./
+COPY pyproject.toml ./
 RUN python3 -m pip install --upgrade pip poetry
-RUN poetry lock && poetry install --no-root
-RUN poetry source add --priority=explicit pytorch-cpu https://download.pytorch.org/whl/cpu
-RUN poetry add torch@2.4.1 --source pytorch-cpu
+RUN poetry install --without dev --no-root --no-interaction --no-ansi --extras cpu
 
-COPY docker/gunicorn_conf.py /srv/gunicorn_conf.py
-COPY docker/entrypoint.sh /entrypoint.sh
+COPY gunicorn_conf.py /srv/gunicorn_conf.py
+COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 COPY app /srv/app

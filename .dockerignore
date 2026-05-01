@@ -1,1 +1,26 @@
+# Ignore git history
+.git
+.gitignore
+
+# Ignore all Python caches
+__pycache__
+*.pyc
+.pytest_cache
+.ruff_cache
+.mypy_cache
+
+# Ignore local environments (Docker will build its own)
 .venv
+venv
+
+# Ignore documentation and CI configs
+README.md
+LICENSE
+.github
+.gitlab-ci.yml
+
+# Ignore tests (Optional: omit this if you run tests inside the container)
+tests/
+
+# Ignore local secret files
+*.env

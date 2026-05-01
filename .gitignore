@@ -1,4 +1,44 @@
-.env
-.venv
+.vscode
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environments
+.venv/
+env/
+venv/
+ENV/
+
+# Poetry
+# Note: Keep poetry.lock in Git, but ignore the virtualenv if it's local
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
 *.lock
-**/*.pt
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+
+# Unit test / coverage reports
+htmlcov/
+.coverage
+.coverage.*
+nosetests.xml
+coverage.xml
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Sensitive Info (Never commit these!)
+.env
+.env.*
+
+app/models/*

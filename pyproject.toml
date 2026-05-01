@@ -1,9 +1,9 @@
 [project]
-name = "fidel-ai"
+name = "fidel-api"
 version = "0.1.0"
 description = "OpenAI-compatible API for custom GPT (FastAPI + PyTorch)"
 authors = [
-    {name = "Amha Kindu",email = "amhaznif@gmail.com"}
+    {name = "Amha Kindu", email = "amhaznif@gmail.com"}
 ]
 readme = "README.md"
 requires-python = ">=3.11"
@@ -16,12 +16,56 @@ dependencies = [
     "uvicorn (>=0.37.0,<0.38.0)",
 ]
 
+[project.optional-dependencies]
+cpu = [
+    "torch==2.4.1+cpu",
+]
+gpu = [
+    "torch==2.4.1+cu121",
+]
+
+[tool.poetry.dependencies]
+torch = [
+    { version = "2.4.1+cpu", source = "pytorch-cpu", optional = true, markers = "extra == 'cpu' and extra != 'gpu'" },
+    { version = "2.4.1+cu121", source = "pytorch-gpu", optional = true, markers = "extra == 'gpu' and extra != 'cpu'" },
+]
+
+[[tool.poetry.source]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+priority = "explicit"
+
+[[tool.poetry.source]]
+name = "pytorch-gpu"
+url = "https://download.pytorch.org/whl/cu121"
+priority = "explicit"
+
 [dependency-groups]
 dev = [
-    "pytest (>=8.4.2,<9.0.0)"
+    "httpx (>=0.28.1,<0.29.0)",
+    "mypy (>=1.18.2,<2.0.0)",
+    "pytest (>=8.4.2,<9.0.0)",
+    "ruff (>=0.13.1,<0.14.0)"
 ]
 
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+exclude = [
+    "app/models"
+]
+
+[tool.ruff.lint]
+select = ["B", "E", "F", "I"]
+
+[tool.mypy]
+python_version = "3.11"
+files = ["app/api.py", "app/config.py", "app/deps.py", "app/inference.py", "app/runtime.py"]
+check_untyped_defs = true
+ignore_missing_imports = true
+warn_unused_configs = true

@@ -1,29 +1,23 @@
 FROM nvidia/cuda:12.1.1-cudnn8-runtime-ubuntu22.04
 
-
 ENV DEBIAN_FRONTEND=noninteractive \
 PYTHONDONTWRITEBYTECODE=1 \
 PYTHONUNBUFFERED=1 \
 PIP_NO_CACHE_DIR=1
 
-
 # Python + deps
 RUN apt-get update && apt-get install -y --no-install-recommends \
 python3 python3-pip python3-venv build-essential curl && rm -rf /var/lib/apt/lists/*
 
-
 RUN python3 -m pip install --upgrade pip
 
-
 WORKDIR /srv
-COPY pyproject.toml poetry.lock ./
+COPY pyproject.toml ./
 RUN python3 -m pip install --upgrade pip poetry
-RUN poetry lock
-RUN poetry install --no-root
-RUN poetry add torch@2.4.1 --extras cuda121 -vv
+RUN poetry install --without dev --no-root --no-interaction --no-ansi --extras gpu
 
-COPY docker/gunicorn_conf.py /srv/gunicorn_conf.py
-COPY docker/entrypoint.sh /entrypoint.sh
+COPY gunicorn_conf.py /srv/gunicorn_conf.py
+COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 COPY app /srv/app

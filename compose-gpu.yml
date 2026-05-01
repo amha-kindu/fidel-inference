@@ -4,7 +4,7 @@ services:
   api:
     build:
       context: .
-      dockerfile: docker/Dockerfile.gpu
+      dockerfile: Dockerfile.cuda
     env_file: .env
     environment:
       # Ensure CORS allows the WebUI origin
@@ -33,7 +33,7 @@ services:
       api:
         condition: service_healthy
     ports:
-      - "2345:2345"   # Web UI available at http://localhost:2345
+      - "2345:8080"   # Web UI available at http://localhost:2345
     environment:
       # Wire Open WebUI to your API (OpenAI-compatible)
       - OPENAI_API_BASE_URL=http://api:7890/v1
