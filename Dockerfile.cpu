@@ -4,6 +4,7 @@ FROM python:3.11-slim
 ENV PYTHONDONTWRITEBYTECODE=1 \
 PYTHONUNBUFFERED=1 \
 PIP_NO_CACHE_DIR=1 \
+POETRY_VERSION=2.3.4 \
 UVICORN_WORKERS=1
 
 # System deps
@@ -11,8 +12,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 build-essential curl && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /srv
-COPY pyproject.toml ./
-RUN python3 -m pip install --upgrade pip poetry
+COPY pyproject.toml poetry.lock* ./
+
+RUN python3 -m pip install --upgrade pip
+RUN pip install --no-cache-dir "poetry==${POETRY_VERSION}"
 RUN poetry install --without dev --no-root --no-interaction --no-ansi --extras cpu
 
 COPY gunicorn_conf.py /srv/gunicorn_conf.py
